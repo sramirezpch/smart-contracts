@@ -1,10 +1,16 @@
-import path from "path";
-import fs from "fs";
+import { Contract } from "ethers";
+import { ethers } from "hardhat";
 
-import { artifacts, ethers } from "hardhat";
+async function seed(nft: Contract) {
+  const accounts = await ethers.getSigners();
+
+  for (let i = 0; i < 5; i++) {
+    await nft.safeMint(accounts[i % 2].address, "");
+  }
+}
 
 async function main() {
-  const contractsDir = path.join(__dirname, "/../marketplace/src");
+  const network = process.env.HARDHAT_NETWORK;
 
   const NFT = await ethers.getContractFactory("NFT");
   const nft = await NFT.deploy();
@@ -17,14 +23,7 @@ async function main() {
 
   console.log(`NFT contract deployed at ${contractAddresses.nft}`);
 
-  fs.writeFileSync(
-    `${contractsDir}/contracts.json`,
-    JSON.stringify(contractAddresses)
-  );
-
-  const NFTArtifact = artifacts.readArtifactSync("NFT");
-
-  fs.writeFileSync(`${contractsDir}/abi/NFT.json`, JSON.stringify(NFTArtifact));
+  if (network == "localhost") await seed(nft);
 }
 
 main().catch((error) => {
